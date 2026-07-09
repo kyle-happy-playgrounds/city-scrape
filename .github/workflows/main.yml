@@ -1,0 +1,44 @@
+name: Daily City Scraper
+
+# Run automatically every day at 3:00 AM UTC, or manually via a button
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  scrape-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' 
+          cache: 'pipenv'
+
+      - name: Install Pipenv
+        run: pip install pipenv
+
+      - name: Install Project Dependencies
+        # --deploy ensures it strictly follows your Pipfile.lock so CI matches your local machine exactly
+        run: pipenv install --deploy 
+
+      - name: Run All Scrapers
+        # We run the orchestrator script using pipenv so python has access to all your tools
+        run: pipenv run python main.py
+
+      - name: Upload Artifacts for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public_data'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

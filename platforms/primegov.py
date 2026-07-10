@@ -6,6 +6,9 @@ class BasePrimeGovArchived(JsonListPage):
     def process_page(self):
 
         meeting_array = self.data if isinstance(self.data, list) else []
+
+        target_committees = getattr(self, "target_committees", {})
+        self.reverse_committees = {v: k for k, v in target_committees.items()}
         
         for item in meeting_array:
             parsed_doc = self.process_item(item)
@@ -13,12 +16,13 @@ class BasePrimeGovArchived(JsonListPage):
                 yield parsed_doc
 
     def process_item(self, item):
-        target_committees = getattr(self, "target_committees", [])
         committee_id = item.get("committeeId")
         
-        if target_committees and committee_id not in target_committees:
+        if self.reverse_committees and committee_id not in self.reverse_committees:
             return None
             
+        department_name = self.reverse_committees.get(committee_id, "Unknown")
+
         title = item.get("title", "Unknown").strip()
         
         date_time_str = item.get("dateTime", "")
@@ -49,5 +53,6 @@ class BasePrimeGovArchived(JsonListPage):
             city=getattr(self, "city_name", "Unknown"),
             state=getattr(self, "state_name", "Unknown"),
             platform="primegov",
+            department=department_name,
             documents=found_documents
         ))

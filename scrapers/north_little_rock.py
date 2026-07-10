@@ -13,7 +13,8 @@ class NorthLittleRockAgendas(BaseLaserficheSearch):
             {
                 "folder_id": 755671,
                 "doc_type": "minutes",
-                "description": "2026 City Council Minutes"
+                "description": "2026 City Council Minutes",
+                "department": "City Council"
             }
         ]
     

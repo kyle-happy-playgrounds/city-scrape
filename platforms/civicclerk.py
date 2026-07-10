@@ -14,6 +14,7 @@ class BaseCivicClerkSearch(Page):
         e_date = end_dates[0]
 
         dept_ids = ",".join(depts.values())
+        reverse_depts = {str(v): k for k, v in depts.items()}
 
         if dept_ids:
             filter_str = f"categoryId in ({dept_ids}) and startDateTime ge {s_date} and startDateTime lt {e_date}"
@@ -26,7 +27,7 @@ class BaseCivicClerkSearch(Page):
         first_page = BaseCivicClerkEvents(full_url)
         first_page.city_name = getattr(self, "city_name", "Unknown")
         first_page.state_name = getattr(self, "state_name", "Unknown")
-        
+        first_page.dept_map = reverse_depts
         yield first_page
 
 
@@ -48,6 +49,7 @@ class BaseCivicClerkEvents(JsonListPage):
             next_page = BaseCivicClerkEvents(next_link)
             next_page.city_name = getattr(self, "city_name", "Unknown")
             next_page.state_name = getattr(self, "state_name", "Unknown")
+            next_page.dept_map = getattr(self, "dept_map", {})
             yield next_page
     
     def process_item(self, item):
@@ -55,6 +57,10 @@ class BaseCivicClerkEvents(JsonListPage):
 
         raw_date = item.get("eventDate", "")
         date_str = raw_date.split("T")[0] if raw_date else ""
+
+        dept_id = str(item.get("categoryId", ""))
+        dept_map = getattr(self, "dept_map", {})
+        department_name = dept_map.get(dept_id, "Unknown Department")
 
         found_documents = {}
 
@@ -76,6 +82,7 @@ class BaseCivicClerkEvents(JsonListPage):
                 city=getattr(self, "city_name", "Unknown"),
                 state=getattr(self,"state_name", "unknown"),
                 platform="civicclerk",
+                department=department_name,
                 documents=found_documents
             )
             return record

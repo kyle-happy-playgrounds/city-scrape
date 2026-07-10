@@ -13,22 +13,26 @@ class OwassoAgendas(BaseLaserficheSearch):
             {
                 "folder_id": 310006,
                 "doc_type": "minutes",
-                "description": "2026 City Council Minutes"
+                "description": "2026 City Council Minutes",
+                "department": "City Council"
             },
             {
                 "folder_id": 310004, 
                 "doc_type": "agenda",
-                "description": "2026 City Council Agendas"
+                "description": "2026 City Council Agendas",
+                "department": "City Council"
             },
             {
                 "folder_id": 310091, 
                 "doc_type": "agenda",
-                "description": "2026 Planning Commission Agenda"
+                "description": "2026 Planning Commission Agenda",
+                "department": "Planning Commission"
             },
             {
                 "folder_id": 310785, 
                 "doc_type": "minutes",
-                "description": "2026 Planning Commission Agenda"
+                "description": "2026 Planning Commission Agenda",
+                "department": "Planning Commission"
             }
         ]
     

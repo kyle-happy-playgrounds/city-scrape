@@ -38,6 +38,7 @@ class BaseLaserficheSearch(Page):
             list_page.repo_name = repo_name
             list_page.doc_type_mapping = folder.get("doc_type", "unknown")
             
+            list_page.department = folder.get("department", "unknown")
             yield list_page
 
 
@@ -80,6 +81,7 @@ class BaseLaserficheApiBrowse(JsonListPage):
             city=getattr(self, "city_name", "Unknown"),
             state=getattr(self, "state_name", "Unknown"),
             platform="laserfiche",
+            department=getattr(self, "department", "unknown"),
             documents={doc_type: doc_url}
         ))
 

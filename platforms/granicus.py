@@ -24,8 +24,12 @@ class BaseGranicusRSSList(Page):
                 date_published_iso = dt.strftime("%Y-%m-%d")
 
             target_depts = getattr(self, "target_departments", [])
-            if target_depts and not any(dept.lower() in title.lower() for dept in target_depts):
-                continue
+            department_name = "Unknown"
+            if target_depts:
+                matched_dept = next((dept for dept in target_depts if dept.lower() in title.lower()), None)
+                if not matched_dept:
+                    continue
+                department_name = matched_dept
 
             target_years = getattr(self, "target_years", [])
             if target_years and not any(year in title or year in date_published_iso for year in target_years):
@@ -40,5 +44,6 @@ class BaseGranicusRSSList(Page):
                 city=getattr(self, "city_name", "Unknown"),
                 state=getattr(self, "state_name", "Unknown"),
                 platform="granicus",
+                department=department_name,
                 documents=found_documents
             ))

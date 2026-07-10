@@ -51,6 +51,8 @@ class BaseLegistarSearch(HtmlPage):
                 list_page = BaseLegistarList(post_url)
                 list_page.city_name = getattr(self, "city_name", "Unknown")
                 list_page.state_name = getattr(self, "state_name", "Unknown")
+
+                list_page.department = dept_name
                 
                 yield list_page
 
@@ -96,6 +98,7 @@ class BaseLegistarList(HtmlListPage):
                 date_published=doc_date_string,
                 city=getattr(self, "city_name", "Unknown"),
                 state=getattr(self,"state_name", "unknown"),
+                department=getattr(self, "department", "unknown"),
                 platform="legistar",
                 documents=found_documents
             )

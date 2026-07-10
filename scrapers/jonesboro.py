@@ -8,7 +8,7 @@ class JonesboroAgendas(BaseLegistarSearch):
     target_years = ["2026"]
     target_departments = {
         "Metropolitan Area Planning Commission": "5950",
-        "City Concil": "5943"
+        "City Council": "5943"
     }
 
 def get_scraper():

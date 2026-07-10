@@ -9,8 +9,11 @@ class OklahomaCityAgendas(BasePrimeGovArchived):
     state_name = "OK"
     client_slug = "okc"
 
-    # 1 : city concil, 16 : bond advisory, 70 : Park Commission
-    target_committees = [1, 16, 70]
+    target_committees = {
+        "City Council": 1, 
+        "Bond Advisory": 16, 
+        "Park Commission": 70
+    }
 
 def get_scraper():
     return OklahomaCityAgendas()

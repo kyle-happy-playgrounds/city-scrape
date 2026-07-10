@@ -8,7 +8,7 @@ class BrokenArrowAgendas(BaseLegistarSearch):
     target_years = ["2026"]
     target_departments = {
         "Planning Commission": "29298",
-        "Broken Arrow City Concil": "29289"
+        "Broken Arrow City Council": "29289"
     }
 
 

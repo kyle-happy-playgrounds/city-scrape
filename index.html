@@ -8,16 +8,15 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .control-row { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; }
+        .date-label { font-size: 0.9em; font-weight: bold; color: #555; padding-top: 10px; margin-right: -4px; }
         input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 150px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
         th { background-color: #f8f9fa; cursor: pointer; user-select: none; }
         th:hover { background-color: #e9ecef; }
-        /* Add a light gray background to every even row */
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        /* Optional: Highlight the row the user is currently hovering over */
         tbody tr:hover { background-color: #f1f3f5; }
         .doc-link { display: inline-block; padding: 4px 8px; margin: 2px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em; }
         .doc-link:hover { background: #0056b3; }
@@ -31,16 +30,26 @@
     <h1>Municipal Document Explorer</h1>
     
     <div class="controls">
-        <input type="text" id="searchTitle" placeholder="Search by title...">
-        <select id="filterState"><option value="">All States</option></select>
-        <select id="filterCity"><option value="">All Cities</option></select>
-        <input type="date" id="filterDate">
+        <div class="control-row">
+            <input type="text" id="searchTitle" placeholder="Search by title...">
+            <select id="filterDepartment"><option value="">All Departments</option></select>
+            <select id="filterState"><option value="">All States</option></select>
+            <select id="filterCity"><option value="">All Cities</option></select>
+        </div>
+        <div class="control-row">
+            <span class="date-label">From:</span>
+            <input type="date" id="filterStartDate" title="Start Date">
+            <span class="date-label">To:</span>
+            <input type="date" id="filterEndDate" title="End Date">
+        </div>
+
     </div>
 
     <table>
         <thead>
             <tr>
                 <th onclick="sortTable('title')">Title ↕</th>
+                <th onclick="sortTable('department')">Department ↕</th>
                 <th onclick="sortTable('city')">City ↕</th>
                 <th onclick="sortTable('state')">State ↕</th>
                 <th onclick="sortTable('date_published')">Date ↕</th>
@@ -81,10 +90,13 @@
     function populateDropdowns() {
         const states = [...new Set(rawData.map(item => item.state))].sort();
         const cities = [...new Set(rawData.map(item => item.city))].sort();
+        const departments = [...new Set(rawData.map(item => item.department))].sort();
 
+        const departmentSelect = document.getElementById('filterDepartment');
         const stateSelect = document.getElementById('filterState');
         const citySelect = document.getElementById('filterCity');
 
+        departments.forEach(department => departmentSelect.innerHTML += `<option value="${department}">${department}</option>`);
         states.forEach(state => stateSelect.innerHTML += `<option value="${state}">${state}</option>`);
         cities.forEach(city => citySelect.innerHTML += `<option value="${city}">${city}</option>`);
     }
@@ -105,17 +117,28 @@
     // 3. Render the table based on current filters and sort state
     function renderTable() {
         const titleQuery = document.getElementById('searchTitle').value.toLowerCase();
+        const departmentQuery = document.getElementById('filterDepartment').value;
         const stateQuery = document.getElementById('filterState').value;
         const cityQuery = document.getElementById('filterCity').value;
-        const dateQuery = document.getElementById('filterDate').value;
+        const startDateQuery = document.getElementById('filterStartDate').value;
+        const endDateQuery = document.getElementById('filterEndDate').value;
 
         // Filter the data
         let filtered = rawData.filter(item => {
             const matchesTitle = item.title.toLowerCase().includes(titleQuery);
+            const matchesDepartment = departmentQuery === "" || item.department === departmentQuery;
             const matchesState = stateQuery === "" || item.state === stateQuery;
             const matchesCity = cityQuery === "" || item.city === cityQuery;
-            const matchesDate = dateQuery === "" || item.date_published === dateQuery;
-            return matchesTitle && matchesState && matchesCity && matchesDate;
+
+            let matchesDate = true;
+            if (startDateQuery) {
+                matchesDate = matchesDate && (item.date_published >= startDateQuery);
+            }
+            if (endDateQuery) {
+                matchesDate = matchesDate && (item.date_published <= endDateQuery);
+            }
+
+            return matchesTitle && matchesDepartment && matchesState && matchesCity && matchesDate;
         });
 
         // Sort the data
@@ -148,6 +171,7 @@
             tbody.innerHTML += `
                 <tr>
                     <td>${item.title}</td>
+                    <td>${item.department || "Unknown"}</td>
                     <td>${item.city}</td>
                     <td>${item.state}</td>
                     <td>${formatDisplayDate(item.date_published)}</td>
@@ -170,11 +194,12 @@
 
     // 5. Attach event listeners to all inputs to trigger re-renders
     document.getElementById('searchTitle').addEventListener('input', renderTable);
+    document.getElementById('filterDepartment').addEventListener('change', renderTable);
     document.getElementById('filterState').addEventListener('change', renderTable);
     document.getElementById('filterCity').addEventListener('change', renderTable);
-    document.getElementById('filterDate').addEventListener('change', renderTable);
+    document.getElementById('filterStartDate').addEventListener('change', renderTable);
+    document.getElementById('filterEndDate').addEventListener('change', renderTable);
 
-    // Kick it off!
     loadData();
 </script>
 

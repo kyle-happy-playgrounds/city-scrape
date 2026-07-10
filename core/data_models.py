@@ -7,4 +7,5 @@ class PublicDocument:
     city: str
     state: str
     platform: str
+    department: str
     documents: dict

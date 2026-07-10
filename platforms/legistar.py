@@ -1,6 +1,7 @@
 from spatula import HtmlPage, HtmlListPage, CSS, URL
 from core.data_models import PublicDocument
 import json
+from datetime import datetime
 
 class BaseLegistarSearch(HtmlPage):
 
@@ -74,6 +75,7 @@ class BaseLegistarList(HtmlListPage):
         
         name = name_nodes[0].text_content().strip()
         date_str = date_nodes[0].text_content().strip()
+        doc_date_string = datetime.strptime(date_str, "%m/%d/%Y").date().isoformat()
 
         doc_columns = {
             7: "agenda",
@@ -91,7 +93,7 @@ class BaseLegistarList(HtmlListPage):
         if name and found_documents:      
             doc = PublicDocument(
                 title=name,
-                date_published=date_str,
+                date_published=doc_date_string,
                 city=getattr(self, "city_name", "Unknown"),
                 state=getattr(self,"state_name", "unknown"),
                 platform="legistar",

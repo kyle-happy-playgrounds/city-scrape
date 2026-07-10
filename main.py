@@ -56,6 +56,9 @@ def run_scrapers():
     master_file = f"{output_dir}/all_data.json"
     with open(master_file, "w") as f:
         json.dump(master_data, f, indent=2)
+
+    # Copy the HTML frontend into the public folder
+    shutil.copy("index.html", f"{output_dir}/index.html")
     print(f"Created master dataset with {len(master_data)} total documents at {master_file}!")
 
 if __name__ == "__main__":

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Municipal Document Explorer</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; min-width: 150px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; cursor: pointer; user-select: none; }
+        th:hover { background-color: #e9ecef; }
+        /* Add a light gray background to every even row */
+        tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        /* Optional: Highlight the row the user is currently hovering over */
+        tbody tr:hover { background-color: #f1f3f5; }
+        .doc-link { display: inline-block; padding: 4px 8px; margin: 2px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em; }
+        .doc-link:hover { background: #0056b3; }
+        .loading { text-align: center; font-style: italic; color: #666; padding: 20px; }
+        
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Municipal Document Explorer</h1>
+    
+    <div class="controls">
+        <input type="text" id="searchTitle" placeholder="Search by title...">
+        <select id="filterState"><option value="">All States</option></select>
+        <select id="filterCity"><option value="">All Cities</option></select>
+        <input type="date" id="filterDate">
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th onclick="sortTable('title')">Title ↕</th>
+                <th onclick="sortTable('city')">City ↕</th>
+                <th onclick="sortTable('state')">State ↕</th>
+                <th onclick="sortTable('date_published')">Date ↕</th>
+                <th>Documents</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr><td colspan="5" class="loading">Loading data...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let rawData = [];
+    let currentSort = { column: 'date_published', isAscending: false };
+
+    // 1. Fetch the master JSON file
+    async function loadData() {
+        try {
+            let response;
+            try {
+                response = await fetch('all_data.json'); //Prod
+                if (!response.ok) throw new Error("Not found locally");
+            } catch (e) {
+                response = await fetch('public_data/all_data.json'); //local dev
+            }
+            rawData = await response.json();
+            
+            populateDropdowns();
+            renderTable();
+        } catch (error) {
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Failed to load data. Ensure GitHub Pages has built the master JSON file.</td></tr>`;
+            console.error(error);
+        }
+    }
+
+    // 2. Dynamically fill the City and State dropdowns based on the data
+    function populateDropdowns() {
+        const states = [...new Set(rawData.map(item => item.state))].sort();
+        const cities = [...new Set(rawData.map(item => item.city))].sort();
+
+        const stateSelect = document.getElementById('filterState');
+        const citySelect = document.getElementById('filterCity');
+
+        states.forEach(state => stateSelect.innerHTML += `<option value="${state}">${state}</option>`);
+        cities.forEach(city => citySelect.innerHTML += `<option value="${city}">${city}</option>`);
+    }
+
+    // Helper function to turn YYYY-MM-DD into MM/DD/YYYY
+    function formatDisplayDate(dateString) {
+        if (!dateString) return "Unknown";
+        
+        // Split the YYYY-MM-DD string by hyphens
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            // Reassemble as MM/DD/YYYY
+            return `${parts[1]}/${parts[2]}/${parts[0]}`;
+        }
+        return dateString; // Fallback just in case
+    }
+
+    // 3. Render the table based on current filters and sort state
+    function renderTable() {
+        const titleQuery = document.getElementById('searchTitle').value.toLowerCase();
+        const stateQuery = document.getElementById('filterState').value;
+        const cityQuery = document.getElementById('filterCity').value;
+        const dateQuery = document.getElementById('filterDate').value;
+
+        // Filter the data
+        let filtered = rawData.filter(item => {
+            const matchesTitle = item.title.toLowerCase().includes(titleQuery);
+            const matchesState = stateQuery === "" || item.state === stateQuery;
+            const matchesCity = cityQuery === "" || item.city === cityQuery;
+            const matchesDate = dateQuery === "" || item.date_published === dateQuery;
+            return matchesTitle && matchesState && matchesCity && matchesDate;
+        });
+
+        // Sort the data
+        filtered.sort((a, b) => {
+            let valA = a[currentSort.column] || "";
+            let valB = b[currentSort.column] || "";
+            
+            if (valA < valB) return currentSort.isAscending ? -1 : 1;
+            if (valA > valB) return currentSort.isAscending ? 1 : -1;
+            return 0;
+        });
+
+        // Build the HTML
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No documents match your filters.</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(item => {
+            // Convert the documents dictionary into clickable buttons
+            let docButtons = "";
+            for (const [docType, url] of Object.entries(item.documents)) {
+                const cleanLabel = docType.replace("_", " ").toUpperCase();
+                docButtons += `<a href="${url}" target="_blank" class="doc-link">${cleanLabel}</a>`;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.title}</td>
+                    <td>${item.city}</td>
+                    <td>${item.state}</td>
+                    <td>${formatDisplayDate(item.date_published)}</td>
+                    <td>${docButtons}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // 4. Handle sorting when column headers are clicked
+    function sortTable(columnName) {
+        if (currentSort.column === columnName) {
+            currentSort.isAscending = !currentSort.isAscending; // Toggle direction
+        } else {
+            currentSort.column = columnName;
+            currentSort.isAscending = true; // Default to ascending on new column
+        }
+        renderTable();
+    }
+
+    // 5. Attach event listeners to all inputs to trigger re-renders
+    document.getElementById('searchTitle').addEventListener('input', renderTable);
+    document.getElementById('filterState').addEventListener('change', renderTable);
+    document.getElementById('filterCity').addEventListener('change', renderTable);
+    document.getElementById('filterDate').addEventListener('change', renderTable);
+
+    // Kick it off!
+    loadData();
+</script>
+
+</body>
+</html>
